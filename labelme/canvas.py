@@ -413,14 +413,23 @@ class Canvas(QtWidgets.QWidget):
             self.selectionChanged.emit(False)
             self.update()
 
+    def deleteShape(self, shape):
+        self.shapes.remove(self.selectedShape)
+        self.storeShapes()
+        self.selectedShape = None
+        self.update()
+        return shape
+    def delete_shape_from_canvas(self, shape):
+        self.shapes.remove(shape)
+        self.update()
+
+    
+
+
     def deleteSelected(self):
         if self.selectedShape:
             shape = self.selectedShape
-            self.shapes.remove(self.selectedShape)
-            self.storeShapes()
-            self.selectedShape = None
-            self.update()
-            return shape
+            return self.deleteShape(shape)
 
     def copySelectedShape(self):
         if self.selectedShape:
@@ -497,6 +506,30 @@ class Canvas(QtWidgets.QWidget):
         self.setHiding(False)
         self.newShape.emit()
         self.update()
+        # self.ask_model()
+
+    def add_shape_to_canvas(self, shape):
+        self.shapes.append(shape)
+        self.update()
+    # def ask_model(self):
+    #     # if not self.dirty:
+    #         # return True
+    #     mb = QtWidgets.QMessageBox
+    #     msg = 'Do you want to use segmentation model'
+    #     answer = mb.question(self,
+    #                          ' Use model for semi-segment?',
+    #                          msg,
+    #                          mb.Save | mb.Discard | mb.Cancel,
+    #                          mb.Save)
+    #     rt_value = None
+    #     if answer == mb.Discard:
+    #         rt_value= True
+    #     elif answer == mb.Save:
+    #         # self.saveFile()
+    #         rt_value= True
+    #     else:  # answer == mb.Cancel
+    #         rt_value= False
+    #     print('rt_value:', rt_value)
 
     def closeEnough(self, p1, p2):
         # d = distance(p1 - p2)
@@ -638,6 +671,7 @@ class Canvas(QtWidgets.QWidget):
         self.repaint()
 
     def loadShapes(self, shapes):
+        # load shape given a list of shape
         self.shapes = list(shapes)
         self.storeShapes()
         self.current = None

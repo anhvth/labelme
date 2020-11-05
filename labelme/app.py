@@ -2,37 +2,37 @@ import argparse
 import codecs
 import functools
 import os.path
+import os.path as osp
 import re
 import sys
 import warnings
 import webbrowser
+from glob import glob
 
-from qtpy import QtCore
+import cv2
+import mmcv
+import numpy as np
+# from ccdet.apis import init_detector
+# from ccdet.core.post_processing import bbox_threshold
+from ccseg.apis import init_segmentor
+from mmcv import Config
+# from mmdet.apis import inference_detector
+from mmseg.apis import inference_segmentor
+from pyson.vision import find_contours
+from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Qt
-from qtpy import QtGui
-from qtpy import QtWidgets
 
-from labelme import __appname__
-from labelme import __version__
+from labelme import __appname__, __version__, logger
 from labelme.canvas import Canvas
 from labelme.colorDialog import ColorDialog
 from labelme.compat import QT5
 from labelme.config import get_config
 from labelme.labelDialog import LabelDialog
-from labelme.labelFile import LabelFile
-from labelme.labelFile import LabelFileError
-from labelme.lib import addActions
-from labelme.lib import fmtShortcut
-from labelme.lib import newAction
-from labelme.lib import newIcon
-from labelme.lib import struct
-from labelme import logger
-from labelme.shape import DEFAULT_FILL_COLOR
-from labelme.shape import DEFAULT_LINE_COLOR
-from labelme.shape import Shape
+from labelme.labelFile import LabelFile, LabelFileError
+from labelme.lib import addActions, fmtShortcut, newAction, newIcon, struct
+from labelme.shape import DEFAULT_FILL_COLOR, DEFAULT_LINE_COLOR, Shape
 from labelme.toolBar import ToolBar
 from labelme.zoomWidget import ZoomWidget
-
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -47,7 +47,8 @@ from labelme.zoomWidget import ZoomWidget
 
 # Utility functions and classes.
 
-
+SEG_CONFIG = 'C:\\Users\\vnbot\\Downloads\\su_model\\fcn_hr18_celeb_3classes.py'
+SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Downloads\\su_model\\iter_500.pth'
 class WindowMixin(object):
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
@@ -71,6 +72,14 @@ class EscapableQListWidget(QtWidgets.QListWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.clearSelection()
+
+
+def _point_to_list(points):
+    # input a shape or a list of shape
+    if isinstance(points, list):
+        return [_point_to_list(_) for _ in points]
+    else:
+        return (points.x(), points.y())
 
 
 class LabelQListWidget(QtWidgets.QListWidget):
@@ -294,6 +303,10 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                          functools.partial(self.togglePolygons, True),
                          icon='eye', tip='Show all polygons', enabled=False)
 
+        # -------------------- Segment head
+        segmentHead = action('Segment\nHead', self.segmentHead,
+                             shortcuts['segment_head'], 'objects',
+                             'Segment the cropted head', enabled=True)
         help = action('&Tutorial', self.tutorial, icon='help',
                       tip='Show tutorial page')
 
@@ -373,7 +386,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             zoomActions=zoomActions,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             tool=(),
-            editMenu=(edit, copy, delete, None, undo, undoLastPoint,
+            editMenu=(edit, segmentHead, copy, delete, None, undo, undoLastPoint,
                       None, color1, color2),
             menu=(
                 createMode, createRectangleMode,
@@ -392,6 +405,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             edit=self.menu('&Edit'),
             view=self.menu('&View'),
             help=self.menu('&Help'),
+            # model=self.menu('&Model'),
             recentFiles=QtWidgets.QMenu('Open &Recent'),
             labelList=labelMenu,
         )
@@ -480,7 +494,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
-
+        self.seg_model = init_segmentor(
+            SEG_CONFIG, SEG_CKPT_PATH,
+            # 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\ccsegmentation\\config\\face_segmenatation\\fcn_hr18_celeb.py',
+            # 'http://118.69.233.170:8000/legacy/haianh/hr18_celeb_40000.pth',
+            'cpu')
     # Support Functions
 
     def noShapes(self):
@@ -499,6 +517,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.actions.editMode,
         )
         addActions(self.menus.edit, actions + self.actions.editMenu)
+        # addActions(self.menus.model, (self.segmentHead))
 
     def setDirty(self):
         if self._config['auto_save']:
@@ -601,6 +620,48 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     def setCreateMode(self):
         self.toggleDrawMode(False, createMode='polygon')
+
+    def segmentHead(self):
+        # self.setCreateRectangleMode()
+        self.toggleDrawMode(True)
+
+        # shape = self.canvas.deleteSelected()
+        # self.remLabel(shape)
+        if len(self.canvas.shapes) > 0:
+            shape = self.canvas.shapes[-1]
+
+
+            points = _point_to_list(shape.points)
+            x1, y1 = points[0]
+            x2, y2 = points[2]
+            image = mmcv.imread(self.filename)
+            face_pad = image[y1:y2, x1:x2]
+            result = inference_segmentor(self.seg_model, face_pad)
+            result_color = self.seg_model.show_result(
+                face_pad, result, palette=self.seg_model.PALETTE, show=False)
+            face = ((result[0] == 1)*255).astype('uint8')
+            cnts = find_contours(face)[0]
+            cnts.sort(key=lambda x: cv2.contourArea(x))
+            cnt = cnts[-1]
+            # approximate cnt
+            epsilon = 0.005 * cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, epsilon, True)
+
+            face_shape = [tuple(_) for _ in approx[:, 0]]
+            current_shape = Shape(label='object')
+            for point in face_shape:
+                x, y = point
+                x = x1 + x
+                y = y1 + y
+                current_shape.addPoint(QtCore.QPoint(x, y))
+            
+            
+            self.addLabel(current_shape)
+            self.canvas.add_shape_to_canvas(current_shape)
+            
+            self.remLabel(shape)
+            self.canvas.delete_shape_from_canvas(shape)
+        
 
     def setEditMode(self):
         self.toggleDrawMode(True)
@@ -940,6 +1001,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.filename = filename
         if self._config['keep_prev']:
             prev_shapes = self.canvas.shapes
+
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         if self._config['flags']:
             self.loadFlags({k: False for k in self._config['flags']})
