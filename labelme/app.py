@@ -47,8 +47,10 @@ from labelme.zoomWidget import ZoomWidget
 
 # Utility functions and classes.
 
-SEG_CONFIG = 'C:\\Users\\vnbot\\Downloads\\su_model\\fcn_hr18_celeb_3classes.py'
-SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Downloads\\su_model\\iter_500.pth'
+# SEG_CONFIG = 'C:\\Users\\vnbot\\Downloads\\su_model\\fcn_hr18_celeb_3classes.py'
+# SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Downloads\\su_model\\iter_500.pth'
+SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\ocr\\iter_40000.pth'
+SEG_CONFIG='C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\ocr\\ocr.py'
 class WindowMixin(object):
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
