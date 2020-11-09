@@ -42,16 +42,16 @@ class DetModel():
         return img_color
 
 
-if __name__ == '__main__':
-    config_path = '/home/haianh/gitprojects/bbdetection/configs/za_challenge/vfnet_r50_za_v2.py'
-    checkpoint_path = '/home/haianh/gitprojects/bbdetection/work_dirs/vfnet_r50_za_v2_full_ens/epoch_12.pth'
-    det_model = DetModel(config_path, checkpoint_path)
-    from glob import glob
+# if __name__ == '__main__':
+#     config_path = '/home/haianh/gitprojects/bbdetection/configs/za_challenge/vfnet_r50_za_v2.py'
+#     checkpoint_path = '/home/haianh/gitprojects/bbdetection/work_dirs/vfnet_r50_za_v2_full_ens/epoch_12.pth'
+#     det_model = DetModel(config_path, checkpoint_path)
+#     from glob import glob
     
-    paths = glob('/home/haianh/gitprojects/bbdetection/data/za_traffic_2020/traffic_public_test/images/*.png')
-    path = paths[0]
-    result = det_model.pred(path)
+#     paths = glob('/home/haianh/gitprojects/bbdetection/data/za_traffic_2020/traffic_public_test/images/*.png')
+#     path = paths[0]
+#     result = det_model.pred(path)
 
-    img = det_model.draw_image(path, result)
-    # mmcv.imwrite('test.jpg')
-    show(img)
+#     img = det_model.draw_image(path, result)
+#     # mmcv.imwrite('test.jpg')
+#     show(img)
