@@ -14,10 +14,10 @@ import mmcv
 import numpy as np
 # from ccdet.apis import init_detector
 # from ccdet.core.post_processing import bbox_threshold
-from ccseg.apis import init_segmentor
+# from ccseg.apis import init_segmentor
 from mmcv import Config
 # from mmdet.apis import inference_detector
-from mmseg.apis import inference_segmentor
+# from mmseg.apis import inference_segmentor
 from pyson.vision import find_contours
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Qt
@@ -494,11 +494,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
-        self.seg_model = init_segmentor(
-            SEG_CONFIG, SEG_CKPT_PATH,
+        # self.seg_model = init_segmentor(
+            # SEG_CONFIG, SEG_CKPT_PATH,
             # 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\ccsegmentation\\config\\face_segmenatation\\fcn_hr18_celeb.py',
             # 'http://118.69.233.170:8000/legacy/haianh/hr18_celeb_40000.pth',
-            'cpu')
+            # 'cpu')
     # Support Functions
 
     def noShapes(self):
