@@ -1,4 +1,9 @@
-<img src="https://github.com/wkentaro/labelme/blob/master/labelme/icons/icon.png?raw=true" align="right" />
+# How to start
+```bash
+  ./app.sh
+```
+
+<!-- <img src="https://github.com/wkentaro/labelme/blob/master/labelme/icons/icon.png?raw=true" align="right" />
 
 # labelme: Image Polygonal Annotation with Python
 
@@ -185,4 +190,4 @@ dist/labelme --version
 ## Acknowledgement
 
 This repo is the fork of [mpitid/pylabelme](https://github.com/mpitid/pylabelme),
-whose development has already stopped.
+whose development has already stopped. -->
