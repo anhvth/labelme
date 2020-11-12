@@ -1,4 +1,6 @@
 # How to start
+Install docker
+
 ```bash
   ./app.sh
 ```
