@@ -29,16 +29,10 @@ RUN conda --version
 
 RUN python -m pip install -U pip setuptools wheel
 
-#RUN python -m pip install -v git+
-#RUN pip install mmcv
 RUN pip install git+https://github.com/anhvth/pyson
 RUN git clone https://github.com/anhvth/labelme.git /labelme
-#RUN git clone https://github.com/wkentaro/labelme.git /labelme
 RUN pip install -e /labelme
 RUN apt-get update && apt-get install vim -y
 ENV LANG en-US
-#RUN pip3 install -v git+https://github.com/wkentaro/labelme.git
 
-#USER developer
-#ENV HOME /home/developer
 #ENTRYPOINT [ "labelme" ]
