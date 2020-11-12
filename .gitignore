@@ -9,3 +9,6 @@
 
 .DS_Store
 ccsegmentation
+models
+ccdetection
+mmdetection
