@@ -9,8 +9,6 @@ import labelme.testing
 
 here = osp.dirname(osp.abspath(__file__))
 data_dir = osp.join(here, 'data')
-
-
 def test_MainWindow_open(qtbot):
     win = labelme.app.MainWindow()
     qtbot.addWidget(win)

@@ -29,10 +29,14 @@ RUN conda --version
 
 RUN python -m pip install -U pip setuptools wheel
 
+RUN apt-get update && apt-get install vim -y
+RUN pip install opencv-python
 RUN pip install git+https://github.com/anhvth/pyson
 RUN git clone https://github.com/anhvth/labelme.git /labelme
 RUN pip install -e /labelme
-RUN apt-get update && apt-get install vim -y
+RUN mv /labelme /labelme_clone
 ENV LANG en-US
-
+RUN conda install pytorch torchvision cpuonly -c pytorch -y
+RUN pip install mmcv-full==1.1.5 mmsegmentation timm tensorboard tqdm
+# RUN pip install git+https://github.com/cybercore-co-ltd/ccsegmentation.git
 #ENTRYPOINT [ "labelme" ]

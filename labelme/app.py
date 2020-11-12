@@ -1,25 +1,18 @@
+from qtpy import QtCore, QtGui, QtWidgets
+
 import argparse
 import codecs
 import functools
-import os.path
 import os.path as osp
 import re
 import sys
 import warnings
 import webbrowser
 from glob import glob
+import os
 
-import cv2
-import mmcv
 import numpy as np
-# from ccdet.apis import init_detector
-# from ccdet.core.post_processing import bbox_threshold
-#from ccseg.apis import init_segmentor
-#from mmseg.apis import inference_segmentor
-from mmcv import Config
-# from mmdet.apis import inference_detector
-from pyson.vision import find_contours
-from qtpy import QtCore, QtGui, QtWidgets
+
 from qtpy.QtCore import Qt
 
 from labelme import __appname__, __version__, logger
@@ -47,10 +40,12 @@ from labelme.zoomWidget import ZoomWidget
 
 # Utility functions and classes.
 
-SEG_CONFIG = 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\suhuynh\\fcn_hr18_celeb_3classes.py'
-SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\suhuynh\\iter_500.pth'
+SEG_CONFIG = '/labelme/models/fcn_hr18_celeb_3classes.py'
+SEG_CKPT_PATH = '/labelme/models/iter_500.pth'
 # SEG_CKPT_PATH = 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\ocr\\iter_40000.pth'
 # SEG_CONFIG='C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\models\\ocr\\ocr.py'
+
+SEGMODEL = None
 class WindowMixin(object):
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
@@ -496,11 +491,13 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
-        #self.seg_model = init_segmentor(
-        #    SEG_CONFIG, SEG_CKPT_PATH,
-            # 'C:\\Users\\vnbot\\Desktop\\gitprojects\\labelme\\ccsegmentation\\config\\face_segmenatation\\fcn_hr18_celeb.py',
-            # 'http://118.69.233.170:8000/legacy/haianh/hr18_celeb_40000.pth',
-        #    'cpu')
+        # if 0:
+
+        from mmseg.apis import init_segmentor
+        SEGMODEL=init_segmentor(
+                    SEG_CONFIG, SEG_CKPT_PATH,
+                    'cpu')
+        self.seg_model = SEGMODEL
     # Support Functions
 
     def noShapes(self):
@@ -624,6 +621,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.toggleDrawMode(False, createMode='polygon')
 
     def segmentHead(self):
+        import cv2
+        import mmcv
+        from mmcv import Config
+        from mmseg.apis import inference_segmentor
+        from pyson.vision import find_contours
         # self.setCreateRectangleMode()
         self.toggleDrawMode(True)
 
@@ -632,16 +634,15 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if len(self.canvas.shapes) > 0:
             shape = self.canvas.shapes[-1]
 
-
-            points = _point_to_list(shape.points)
-            x1, y1 = points[0]
-            x2, y2 = points[2]
+            points = np.array(_point_to_list(shape.points))
+            x1, y1 = points[:,0].min(), points[:,1].min()
+            x2, y2 = points[:,0].max(), points[:,1].max()
             image = mmcv.imread(self.filename)
             face_pad = image[y1:y2, x1:x2]
             result = inference_segmentor(self.seg_model, face_pad)
             result_color = self.seg_model.show_result(
                 face_pad, result, palette=self.seg_model.PALETTE, show=False)
-            face = ((result[0] == 1)*255).astype('uint8')
+            face = ((result[0] == 1) * 255).astype('uint8')
             cnts = find_contours(face)[0]
             cnts.sort(key=lambda x: cv2.contourArea(x))
             cnt = cnts[-1]
@@ -656,14 +657,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                 x = x1 + x
                 y = y1 + y
                 current_shape.addPoint(QtCore.QPoint(x, y))
-            
-            
+
             self.addLabel(current_shape)
             self.canvas.add_shape_to_canvas(current_shape)
-            
+
             self.remLabel(shape)
             self.canvas.delete_shape_from_canvas(shape)
-        
 
     def setEditMode(self):
         self.toggleDrawMode(True)
