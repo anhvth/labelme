@@ -1,29 +1,45 @@
-FROM ubuntu:xenial
+FROM ubuntu:bionic
+LABEL maintainer "Kentaro Wada <www.kentaro.wada@gmail.com>"
 
-# http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/
-RUN export uid=1000 gid=1000 && \
-    mkdir -p /home/developer && \
-    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
-    echo "developer:x:${uid}:" >> /etc/group && \
-    mkdir -p /etc/sudoers.d && \
-    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
-    chmod 0440 /etc/sudoers.d/developer && \
-    chown ${uid}:${gid} -R /home/developer
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN \
   apt-get update -qq && \
-  apt-get upgrade -qq -y && \
   apt-get install -qq -y \
-    git \
-    python3 \
-    python3-pip
+    git 
 
-RUN \
-  apt-get install -qq -y \
+# install miniconda
+RUN apt-get update
+
+RUN apt-get install -y wget 
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh 
+RUN apt-get install -y     python3 \
+    python3-pip \
     python3-matplotlib \
-    python3-pyqt5
+    python3-pyqt5 \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install -v git+https://github.com/wkentaro/labelme.git
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ARG PATH="/root/miniconda3/bin:${PATH}"
+RUN conda --version
 
-USER developer
-ENV HOME /home/developer
+RUN python -m pip install -U pip setuptools wheel
+
+#RUN python -m pip install -v git+
+RUN pip install mmcv
+RUN pip install git+https://github.com/anhvth/pyson
+RUN git clone https://github.com/anhvth/labelme.git /labelme
+RUN pip install -e /labelme
+
+RUN mkdir /root/workdir
+WORKDIR /root/workdir
+ENV LANG en-US
+#RUN pip3 install -v git+https://github.com/wkentaro/labelme.git
+
+#USER developer
+#ENV HOME /home/developer
+#ENTRYPOINT [ "labelme" ]

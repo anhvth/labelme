@@ -51,18 +51,19 @@ def labelme_on_docker(in_file, out_file):
         " -e QT_X11_NO_MITSHM=1"
         " -v /tmp/.X11-unix:/tmp/.X11-unix"
         " -v {1}:{2}"
-        " -w /home/developer"
+        " -w /home/vnbot"
     )
     in_file_a = osp.abspath(in_file)
-    in_file_b = osp.join("/home/developer", osp.basename(in_file))
+    in_file_b = osp.join("/home/vnbot", osp.basename(in_file))
     cmd = cmd.format(
         ip,
         in_file_a,
         in_file_b,
     )
+    print("Command:", cmd)
     if out_file:
         out_file_a = osp.abspath(out_file)
-        out_file_b = osp.join("/home/developer", osp.basename(out_file))
+        out_file_b = osp.join("/home/vnbot", osp.basename(out_file))
         cmd += " -v {0}:{1}".format(out_file_a, out_file_b)
     cmd += " wkentaro/labelme labelme {0}".format(in_file_b)
     if out_file:
